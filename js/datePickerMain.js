@@ -59,30 +59,39 @@
 
 		if(direction === 'prev' ) month--;
 		if(direction === 'next' ) month++;
-		
+
+
 		var html = datepicker.buildUi(year, month);
 		//$input.innerHTML = html;
 		//<div class="ui-datepicker-wrapper">
 		//在页面生成wrapper
-		
 		if(!$wrapper){
 			$wrapper = document.createElement('div');
 			$wrapper.className = 'ui-datepicker-wrapper';
 		}
-
-
 		$wrapper.innerHTML = html;
-		document.body.appendChild($wrapper);
+
+		if(typeof direction === 'object'){
+			
+			direction.parentNode.appendChild($wrapper);
+			//direction.after($wrapper);
+
+		}
+
+		//document.body.appendChild($wrapper);
+		
 	};
 
 	datepicker.init = function(input){
-		datepicker.render()
 		
 		//获取input
 		var $input = document.querySelector(input);
 		var isOpen = false;
+		datepicker.render($input);
 
-		$input.addEventListener('click', function(){
+		//console.log($input.getBoundingClientRect());
+		$input.addEventListener('click', function(e){
+			e.stopPropagation();
 			//判断是否开启
 			if(isOpen){
 				$wrapper.classList.remove('ui-datepicker-wrapper-show');
@@ -90,6 +99,7 @@
 			}else{
 				$wrapper.classList.add('ui-datepicker-wrapper-show');
 				//样式和input绝对定位
+				//console.log($input.clientWidth);
 				var left = $input.offsetLeft;
 				var top = $input.offsetTop;
 				var height =$input.offsetHeight;
@@ -101,7 +111,7 @@
 
 		//如果给 按钮加事件每次都会销毁  导致无法执行
 		$wrapper.addEventListener('click', function(e){
-
+			e.stopPropagation();
 			var $target = e.target;
 			//如果点击的不是按钮则直接break
 			if(!$target.classList.contains('ui-datepicker-btn')) return;
@@ -118,15 +128,48 @@
 
 		//点击选择日期
 		$wrapper.addEventListener('click', function(e){
+			e.stopPropagation();
 			//console.log(e);
 			var $target = e.target;
-			//console.log($target)
+			
+			
 			if($target.tagName.toLowerCase() !== 'td') return;
-			var date = new Date(monthData.year, monthData.month - 1, $target.dataset.date);
+			//兼容ie
+			if (!!window.ActiveXObject || "ActiveXObject" in window){
+				var date = new Date(monthData.year, monthData.month - 1, $target.getAttribute('data-date'));
+				//console.log($target.getAttribute('data-date'));
+			}else{
+			  	var date = new Date(monthData.year, monthData.month - 1, $target.dataset.date);
+			  	//console.log($target.dataset.date);
+			}
+			
 			$input.value = format(date);
 			$wrapper.classList.remove('ui-datepicker-wrapper-show');
 			isOpen = false;
 		},false)
+
+		//点击空白区关闭
+		document.addEventListener('click', function () {
+			if(isOpen){
+				//console.log("打开"+isOpen);
+				//$wrapper.remove();
+				$wrapper.classList.remove('ui-datepicker-wrapper-show');
+				isOpen = false;
+			}
+	      	
+		});
+		/* $input.on("click", function (event) {
+		    //取消事件冒泡
+		    var e = arguments.callee.caller.arguments[0] || event; //若省略此句，下面的e改为event，IE运行可以，但是其他浏览器就不兼容
+		    if (e && e.stopPropagation) {
+		        // this code is for Mozilla and Opera
+		        e.stopPropagation();
+		    } else if (window.event) {
+		        // this code is for IE
+		        window.event.cancelBubble = true;
+		    }
+		});*/
+
 	};
 
 	function format(date){
@@ -142,4 +185,8 @@
 		ret += padding(date.getDate());
 		return ret;
 	}
+
+
+
+
 })();
